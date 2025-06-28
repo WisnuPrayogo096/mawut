@@ -6,11 +6,12 @@ use App\Http\Exceptions\ResponseException;
 use App\Http\Resources\BaseResponse;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
-    function login(Request $request)
+    public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'tgl_lahir' => 'required|date_format:Y-m-d',
@@ -44,8 +45,16 @@ class AuthController extends Controller
             );
         }
 
+        Auth::login($user);
+
+        // Buat token dengan expiration time yang jelas
+        $expirationDays = env('TOKEN_EXPIRY_DAYS', 30);
+        $expiresAt = now()->addDays($expirationDays);
+
         $token = $user->createToken(
-            now()->addDays(intval(env(30)))
+            'auth-token-' . now()->format('Y-m-d-H-i-s'),
+            ['*'],
+            $expiresAt
         )->plainTextToken;
 
         $data = array_merge(
@@ -57,12 +66,20 @@ class AuthController extends Controller
         return new BaseResponse($data, 200);
     }
 
-    function logout(Request $request)
+    public function logout(Request $request)
     {
-        $user = $request->user();
-        if ($user) {
-            $user->tokens()->delete();
+        if (!$request->user()) {
+            throw new ResponseException(
+                'No authenticated user found.',
+                401
+            );
         }
-        return new BaseResponse([], 200, 200, 'Logout successful');
+
+        $request->user()->tokens()->where('id', $request->user()->currentAccessToken()->id)->delete();
+
+        return new BaseResponse(
+            ['message' => 'Successfully logged out.'],
+            200
+        );
     }
 }
