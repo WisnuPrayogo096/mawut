@@ -35,17 +35,16 @@ class FingerPegawaiController extends Controller
 
         $bulan = $bulanQuery !== null ? (int)$bulanQuery : Carbon::now()->month;
         $tahun = $tahunQuery !== null ? (int)$tahunQuery : Carbon::now()->year;
-        $perPage = 10;
         $page = $pageQuery !== null ? (int)$pageQuery : 1;
+        $perPage = 10;
+        $idf = $user->idf;
 
-        if (!$user || empty($user->idf)) {
+        if (!$user || empty($idf)) {
             throw new ResponseException(
                 'ID Finger (IDF) user tidak ditemukan atau kosong. Akses ditolak.',
                 403
             );
         }
-
-        $idf = $user->idf;
 
         $fingerPegawai = FingerPegawai::where('id_finger', $idf)
             ->whereRaw('YEAR(tanggal_absen) = ?', [$tahun])
@@ -75,7 +74,6 @@ class FingerPegawaiController extends Controller
             $groupedItems[$dateKey]['records'][] = $item;
         }
 
-        // Convert grouped items to array and maintain pagination structure
         $groupedItemsArray = array_values($groupedItems);
 
         $responseData = [
