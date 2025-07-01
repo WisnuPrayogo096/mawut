@@ -60,9 +60,27 @@ class FingerPegawaiController extends Controller
             );
         }
 
+        // Group items by date (day, month, year)
+        $groupedItems = [];
+        foreach ($fingerPegawai->items() as $item) {
+            $dateKey = Carbon::parse($item->tanggal_absen)->format('Y-m-d');
+
+            if (!isset($groupedItems[$dateKey])) {
+                $groupedItems[$dateKey] = [
+                    'tanggal' => $dateKey,
+                    'records' => []
+                ];
+            }
+
+            $groupedItems[$dateKey]['records'][] = $item;
+        }
+
+        // Convert grouped items to array and maintain pagination structure
+        $groupedItemsArray = array_values($groupedItems);
+
         $responseData = [
             'current_page' => $fingerPegawai->currentPage(),
-            'items' => $fingerPegawai->items(),
+            'items' => $groupedItemsArray,
             'per_page' => $fingerPegawai->perPage(),
             'total' => $fingerPegawai->total(),
             'last_page' => $fingerPegawai->lastPage(),
