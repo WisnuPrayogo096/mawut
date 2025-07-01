@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Exceptions\ResponseException;
 use App\Http\Resources\BaseResponse;
-use App\Models\FingerPegawai;
+use App\Models\FpMasjid;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
-class FingerPegawaiController extends Controller
+class FpMasjidController extends Controller
 {
-    public function getFingerPegawai(Request $request)
+    public function index(Request $request)
     {
         $user = Auth::user();
 
@@ -41,28 +41,28 @@ class FingerPegawaiController extends Controller
 
         if (!$user || empty($idf)) {
             throw new ResponseException(
-                'ID Finger (IDF) user tidak ditemukan atau kosong. Akses ditolak.',
+                'ID finger user tidak ditemukan atau kosong. Akses ditolak.',
                 403
             );
         }
 
-        $fingerPegawai = FingerPegawai::where('id_finger', $idf)
-            ->whereRaw('YEAR(tanggal_absen) = ?', [$tahun])
-            ->whereRaw('MONTH(tanggal_absen) = ?', [$bulan])
-            ->orderByDesc('tanggal_absen')
+        $fpMasjid = FpMasjid::where('id_finger', $idf)
+            ->whereRaw('YEAR(waktu_finger) = ?', [$tahun])
+            ->whereRaw('MONTH(waktu_finger) = ?', [$bulan])
+            ->where('hapus', 0)
+            ->orderByDesc('waktu_finger')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        if ($fingerPegawai->isEmpty()) {
+        if ($fpMasjid->isEmpty()) {
             throw new ResponseException(
-                'Data Finger Pegawai tidak ditemukan untuk bulan dan tahun yang dipilih.',
+                'Data finger masjid tidak ditemukan untuk bulan dan tahun yang dipilih.',
                 404
             );
         }
 
-        // Group items by date (day, month, year)
         $groupedItems = [];
-        foreach ($fingerPegawai->items() as $item) {
-            $dateKey = Carbon::parse($item->tanggal_absen)->format('Y-m-d');
+        foreach ($fpMasjid->items() as $item) {
+            $dateKey = Carbon::parse($item->waktu_finger)->format('Y-m-d');
 
             if (!isset($groupedItems[$dateKey])) {
                 $groupedItems[$dateKey] = [
@@ -77,18 +77,18 @@ class FingerPegawaiController extends Controller
         $groupedItemsArray = array_values($groupedItems);
 
         $responseData = [
-            'current_page' => $fingerPegawai->currentPage(),
+            'current_page' => $fpMasjid->currentPage(),
             'items' => $groupedItemsArray,
-            'per_page' => $fingerPegawai->perPage(),
-            'total' => $fingerPegawai->total(),
-            'last_page' => $fingerPegawai->lastPage(),
-            'from' => $fingerPegawai->firstItem(),
-            'to' => $fingerPegawai->lastItem(),
+            'per_page' => $fpMasjid->perPage(),
+            'total' => $fpMasjid->total(),
+            'last_page' => $fpMasjid->lastPage(),
+            'from' => $fpMasjid->firstItem(),
+            'to' => $fpMasjid->lastItem(),
             'links' => [
-                'first' => $fingerPegawai->url(1),
-                'last' => $fingerPegawai->url($fingerPegawai->lastPage()),
-                'prev' => $fingerPegawai->previousPageUrl(),
-                'next' => $fingerPegawai->nextPageUrl(),
+                'first' => $fpMasjid->url(1),
+                'last' => $fpMasjid->url($fpMasjid->lastPage()),
+                'prev' => $fpMasjid->previousPageUrl(),
+                'next' => $fpMasjid->nextPageUrl(),
             ]
         ];
 

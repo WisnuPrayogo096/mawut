@@ -1,8 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\FingerPegawaiController;
-use App\Http\Controllers\MasterMesinFpController;
+use App\Http\Controllers\FpPresensiController;
+use App\Http\Controllers\FpMasjidController;
+use App\Http\Controllers\MesinFingerController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -13,8 +14,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
+    // method get
+    Route::get('/fp-absensi', [FpPresensiController::class, 'index']);
+    Route::get('/fp-masjid', [FpMasjidController::class, 'index']);
+    Route::get('/mesin-masjid', [MesinFingerController::class, 'indexMasjid']);
+    Route::get('/mesin-presensi', [MesinFingerController::class, 'indexPresensi']);
+
+    // method post
     Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/get-fp-absensi', [FingerPegawaiController::class, 'getFingerPegawai']);
-    Route::get('/get-mesin-masjid', [MasterMesinFpController::class, 'getMasterFpMasjid']);
-    Route::get('/get-mesin-presensi', [MasterMesinFpController::class, 'getMasterFpPresensi']);
 });

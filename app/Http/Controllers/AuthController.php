@@ -47,7 +47,6 @@ class AuthController extends Controller
 
         Auth::login($user);
 
-        // Buat token dengan expiration time yang jelas
         $expirationDays = env('TOKEN_EXPIRY_DAYS', 30);
         $expiresAt = now()->addDays($expirationDays);
 

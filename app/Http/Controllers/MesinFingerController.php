@@ -2,12 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\MasterFpMasjid;
 use App\Models\MasterFpPresensi;
-use Symfony\Component\HttpFoundation\Response;
+use App\Http\Exceptions\ResponseException;
 
-class MasterMesinFpController extends Controller
+class MesinFingerController extends Controller
 {
     private function isConnected($ip): bool
     {
@@ -27,11 +26,11 @@ class MasterMesinFpController extends Controller
         return false;
     }
 
-    public function getMasterFpMasjid()
+    public function indexMasjid()
     {
         $masterFpMasjid = MasterFpMasjid::where([
-            ['hapus', '=', '0'],
-            ['status', '=', '1'],
+            ['hapus', 0],
+            ['status', 1],
         ])->get();
 
         if ($masterFpMasjid->isEmpty()) {
@@ -49,10 +48,10 @@ class MasterMesinFpController extends Controller
 
         return response()->json($masterFpMasjid);
     }
-    
-    public function getMasterFpPresensi()
+
+    public function indexPresensi()
     {
-        $masterFpPresensi = MasterFpPresensi::where('hapus', '0')->get();
+        $masterFpPresensi = MasterFpPresensi::where('hapus', 0)->get();
 
         if ($masterFpPresensi->isEmpty()) {
             throw new ResponseException('Data mesin finger presensi tidak ditemukan atau kosong.', 404);
