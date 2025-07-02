@@ -22,5 +22,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mesin-presensi', [MesinFingerController::class, 'indexPresensi']);
 
     // method post
+    Route::post('/fp-masjid/create', [FpMasjidController::class, 'store']);
     Route::post('/logout', [AuthController::class, 'logout']);
 });

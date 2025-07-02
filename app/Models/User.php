@@ -49,6 +49,6 @@ class User extends Authenticatable
 
     public function getAuthPassword()
     {
-        return 'karepanit' . now()->format('d');
+        return 'karepanit' . now('Asia/Jakarta')->format('d');
     }
 }
