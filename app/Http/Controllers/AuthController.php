@@ -28,8 +28,7 @@ class AuthController extends Controller
         $tgl_lahir = $request->tgl_lahir;
         $password = $request->password;
 
-        $user = User::whereDate('tgl_lahir', $tgl_lahir)
-            ->first();
+        $user = User::whereDate('tgl_lahir', '=', $tgl_lahir)->first();
 
         if (!$user) {
             throw new ResponseException(
