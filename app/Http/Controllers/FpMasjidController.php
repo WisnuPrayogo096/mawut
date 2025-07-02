@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class FpMasjidController extends Controller
 {
@@ -91,6 +92,67 @@ class FpMasjidController extends Controller
                 'next' => $fpMasjid->nextPageUrl(),
             ]
         ];
+
+        return new BaseResponse($responseData, 200);
+    }
+
+    public function jadwalSholat()
+    {
+        $apiSholat = 'https://muslimsalat.com/malang.json?key=bc2f2bba711f74e1e342eb7cfba0d459';
+
+        // Panggil API dan lakukan validasi dasar
+        try {
+            $response = Http::get($apiSholat);
+
+            if ($response->failed() || !isset($response->json()['items'][0])) {
+                return response()->json(['error' => 'Gagal mengambil data jadwal sholat dari API.'], 502);
+            }
+
+            $data = $response->json();
+            $jadwalHariIni = $data['items'][0];
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Tidak dapat terhubung ke server jadwal sholat.'], 500);
+        }
+
+        $dateNow = Carbon::parse($jadwalHariIni['date_for'])->format('d-m-Y');
+        // Siapkan data awal untuk respons JSON
+        $responseData = [
+            'date' => $dateNow,
+            'message' => 'Tidak ada waktu sholat saat ini',
+            'active' => false,
+        ];
+
+        $waktuSholatPenting = [
+            'Subuh'   => $jadwalHariIni['fajr'],
+            'Dzuhur'  => $jadwalHariIni['dhuhr'],
+            'Ashar'   => $jadwalHariIni['asr'],
+            'Maghrib' => $jadwalHariIni['maghrib'],
+            'Isya'    => $jadwalHariIni['isha'],
+        ];
+
+        // Logika utama untuk menentukan jadwal sholat saat ini
+        $sekarang = Carbon::now('Asia/Jakarta');
+
+        foreach ($waktuSholatPenting as $nama => $waktu) {
+            // Konversi string waktu dari API menjadi objek Carbon
+            $waktuMulai = Carbon::createFromFormat('g:i a', $waktu, 'Asia/Jakarta');
+
+            // Tambahkan 50 menit untuk mendapatkan waktu akhir rentang
+            $waktuSelesai = $waktuMulai->copy()->addMinutes(50);
+
+            // Cek apakah waktu saat ini berada di dalam rentang
+            if ($sekarang->between($waktuMulai, $waktuSelesai, true)) {
+                // Jika ya, ubah data respons dengan informasi yang relevan
+                $responseData = [
+                    'date' => $dateNow,
+                    'prayer' => $nama,
+                    'start_time' => $waktuMulai->format('H:i'),
+                    'end_time' => $waktuSelesai->format('H:i'),
+                    'active' => true,
+                ];
+                break; // Hentikan loop karena jadwal sudah ditemukan
+            }
+        }
 
         return new BaseResponse($responseData, 200);
     }

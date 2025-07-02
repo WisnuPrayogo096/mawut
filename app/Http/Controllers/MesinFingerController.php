@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\MasterFpMasjid;
 use App\Models\MasterFpPresensi;
 use App\Http\Exceptions\ResponseException;
+use App\Http\Resources\BaseResponse;
 
 class MesinFingerController extends Controller
 {
@@ -46,7 +47,7 @@ class MesinFingerController extends Controller
             ];
         });
 
-        return response()->json($masterFpMasjid);
+        return new BaseResponse($masterFpMasjid->toArray(), 200);
     }
 
     public function indexPresensi()
@@ -66,6 +67,6 @@ class MesinFingerController extends Controller
             ];
         });
 
-        return response()->json($masterFpPresensi);
+        return new BaseResponse($masterFpPresensi->toArray(), 200);
     }
 }

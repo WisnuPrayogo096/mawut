@@ -17,6 +17,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // method get
     Route::get('/fp-absensi', [FpPresensiController::class, 'index']);
     Route::get('/fp-masjid', [FpMasjidController::class, 'index']);
+    Route::get('/jadwal-sholat', [FpMasjidController::class, 'jadwalSholat']);
     Route::get('/mesin-masjid', [MesinFingerController::class, 'indexMasjid']);
     Route::get('/mesin-presensi', [MesinFingerController::class, 'indexPresensi']);
 

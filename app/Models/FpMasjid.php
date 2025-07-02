@@ -11,4 +11,15 @@ class FpMasjid extends Model
     protected $connection = "mysql_bosq";
     protected $table = 'binroh_finger_pegawai';
     protected $primaryKey = 'id';
+    protected $fillable = [
+        'id',
+        'id_finger',
+        'id_binroh_mesin_finger',
+        'waktu_finger',
+        'status',
+        'hapus',
+        'tgl_insert',
+        'tgl_update',
+        'user_update',
+    ];
 }
