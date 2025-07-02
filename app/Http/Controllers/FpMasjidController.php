@@ -67,7 +67,7 @@ class FpMasjidController extends Controller
 
             if (!isset($groupedItems[$dateKey])) {
                 $groupedItems[$dateKey] = [
-                    'tanggal' => $dateKey,
+                    'date' => $dateKey,
                     'records' => []
                 ];
             }
@@ -114,7 +114,7 @@ class FpMasjidController extends Controller
             return response()->json(['error' => 'Tidak dapat terhubung ke server jadwal sholat.'], 500);
         }
 
-        $dateNow = Carbon::parse($jadwalHariIni['date_for'])->format('d-m-Y');
+        $dateNow = Carbon::parse($jadwalHariIni['date_for'])->format('Y-m-d');
         // Siapkan data awal untuk respons JSON
         $responseData = [
             'date' => $dateNow,

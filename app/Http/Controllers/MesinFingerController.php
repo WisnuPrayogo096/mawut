@@ -41,9 +41,9 @@ class MesinFingerController extends Controller
         $masterFpMasjid = $masterFpMasjid->map(function ($item) {
             return [
                 'id' => $item->id,
-                'ip_mesin' => $item->ip_mesin,
-                'lokasi_mesin' => $item->lokasi_mesin,
-                'status_koneksi' => $this->isConnected($item->ip_mesin) ? 'terhubung' : 'terputus',
+                'ip' => $item->ip_mesin,
+                'location' => $item->lokasi_mesin,
+                'connection' => $this->isConnected($item->ip_mesin) ? 'Connected' : 'Disconnected',
             ];
         });
 
@@ -61,9 +61,9 @@ class MesinFingerController extends Controller
         $masterFpPresensi = $masterFpPresensi->map(function ($item) {
             return [
                 'id' => $item->id,
-                'ip_mesin' => $item->ipmesin,
-                'lokasi_mesin' => $item->lokasi_mesin,
-                'status_koneksi' => $this->isConnected($item->ipmesin) ? 'terhubung' : 'terputus',
+                'ip' => $item->ipmesin,
+                'location' => $item->lokasi_mesin,
+                'connection' => $this->isConnected($item->ipmesin) ? 'Connected' : 'Disconnected',
             ];
         });
 

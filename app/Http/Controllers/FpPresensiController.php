@@ -66,7 +66,7 @@ class FpPresensiController extends Controller
 
             if (!isset($groupedItems[$dateKey])) {
                 $groupedItems[$dateKey] = [
-                    'tanggal' => $dateKey,
+                    'date' => $dateKey,
                     'records' => []
                 ];
             }
