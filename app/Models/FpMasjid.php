@@ -10,7 +10,7 @@ use App\Models\MasterFpMasjid;
 class FpMasjid extends Model
 {
     use HasFactory;
-    protected $connection = "mysql_bosq";
+    // protected $connection = "mysql_bosq";
     public $timestamps = false;
     protected $table = 'binroh_finger_pegawai';
     protected $primaryKey = 'id';

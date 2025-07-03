@@ -156,7 +156,8 @@ class FpMasjidController extends Controller
         $user = Auth::user();
 
         $validator = Validator::make($request->all(), [
-            'id_binroh_mesin_finger' => 'required|integer|exists:mysql_bosq.binroh_mesin_finger,id',
+            'id_binroh_mesin_finger' => 'required|integer|exists:binroh_mesin_finger,id',
+            // 'id_binroh_mesin_finger' => 'required|integer|exists:mysql_bosq.binroh_mesin_finger,id',
         ], [
             'id_binroh_mesin_finger.required' => 'ID mesin finger wajib diisi.',
             'id_binroh_mesin_finger.integer' => 'ID mesin finger harus berupa angka.',

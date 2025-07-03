@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class MasterFpPresensi extends Model
 {
     use HasFactory;
-    protected $connection = "mysql_bosq";
+    // protected $connection = "mysql_bosq";
     protected $table = 'fp_finger_mesin';
     protected $primaryKey = 'id';
 }
