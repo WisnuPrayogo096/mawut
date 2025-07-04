@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use App\Models\MasterFpPresensi;
 
 class FpPresensi extends Model
 {
@@ -22,4 +23,9 @@ class FpPresensi extends Model
         'tgl_update',
         'user_update',
     ];
+
+    public function mesin()
+    {
+        return $this->belongsTo(MasterFpPresensi::class, 'id_fp_finger_mesin', 'id');
+    }
 }

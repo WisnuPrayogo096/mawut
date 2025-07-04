@@ -96,29 +96,6 @@ class FpMasjidController extends Controller
         return new BaseResponse($responseData, 200);
     }
 
-    public function getTodayFpMasjid()
-    {
-        $user = Auth::user();
-
-        if (!$user || empty($user->idf)) {
-            throw new ResponseException(
-                'ID finger user tidak ditemukan atau kosong. Akses ditolak.',
-                403
-            );
-        }
-
-        $today = Carbon::now('Asia/Jakarta');
-        $idf = $user->idf;
-
-        $fpMasjidToday = FpMasjid::where('id_finger', $idf)
-            ->whereDate('waktu_finger', $today)
-            ->where('hapus', 0)
-            ->orderByDesc('waktu_finger')
-            ->get();
-
-        return new BaseResponse($fpMasjidToday->toArray(), 200);
-    }
-
     public function jadwalSholat()
     {
         $apiSholat = 'https://muslimsalat.com/malang.json?key=bc2f2bba711f74e1e342eb7cfba0d459';

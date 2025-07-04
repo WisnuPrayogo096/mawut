@@ -36,7 +36,7 @@ class BaseResponse extends JsonResource
             'message' => $message,
         ];
 
-        if ($this->httpCode >= 200 && $this->httpCode < 300 && count($this->data) > 0) {
+        if ($this->httpCode >= 200 && $this->httpCode < 300) {
             $response['data'] = $this->data;
         }
         return response()->json($response, $this->httpCode);

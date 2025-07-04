@@ -122,4 +122,70 @@ class FpPresensiController extends Controller
 
         return new BaseResponse($grouped->values()->toArray(), 200);
     }
+
+    public function store(Request $request)
+    {
+        $user = Auth::user();
+
+        $validator = Validator::make($request->all(), [
+            'id_fp_finger_mesin' => 'required|integer|exists:fp_finger_mesin,id',
+            // 'id_fp_finger_mesin' => 'required|integer|exists:mysql_bosq.fp_finger_mesin,id',
+        ], [
+            'id_fp_finger_mesin.required' => 'ID mesin finger wajib diisi.',
+            'id_fp_finger_mesin.integer' => 'ID mesin finger harus berupa angka.',
+            'id_fp_finger_mesin.exists' => 'ID mesin finger tidak ditemukan.',
+        ]);
+
+        if ($validator->fails()) {
+            throw new ResponseException('Data yang dikirim tidak valid.', 400);
+        }
+
+        if (empty($user->idf)) {
+            throw new ResponseException('ID Finger tidak ditemukan.', 404);
+        }
+
+        $waktuFinger = Carbon::now('Asia/Jakarta');
+
+        // jika waktu request tepat pada menit ke-2 dan detik ke-1, buak.
+        if ($waktuFinger->minute == 2 && $waktuFinger->second == 1) {
+            throw new ResponseException('Silahkan coba lagi di menit selanjutnya.', 409);
+        }
+
+        $tglGenerate = $this->generateTimeDb($waktuFinger);
+
+        $data = [
+            'id_fp_finger_mesin' => $request->input('id_fp_finger_mesin'),
+            'id_finger' => $user->idf,
+            'waktu_finger' => $waktuFinger,
+            'status' => 0,
+            'hapus' => 0,
+            'tgl_insert' => $tglGenerate,
+            'tgl_update' => $tglGenerate,
+            'user_update' => '',
+        ];
+
+        $fpPresensi = FpPresensi::create($data);
+        return new BaseResponse($fpPresensi->toArray(), 201);
+    }
+
+    private function generateTimeDb(Carbon $waktuSekarang): Carbon
+    {
+        $jam = $waktuSekarang->hour;
+        $menit = $waktuSekarang->minute;
+        $detik = $waktuSekarang->second;
+
+        // jika waktu sudah melewati menit ke-2, detik ke-1 pada jam saat ini
+        if ($menit > 2 || ($menit == 2 && $detik > 1)) {
+            $jam++;
+        }
+
+        // jika jam melewati tengah malam (overflow)
+        if ($jam >= 24) {
+            // set ke hari berikutnya, jam 00:02:01
+            return $waktuSekarang->copy()->addDay()->startOfDay()->setTime(0, 2, 1);
+        }
+
+        // set ke jam yang sudah dihitung, pada menit ke-2 dan detik ke-1
+        return $waktuSekarang->copy()->setTime($jam, 2, 1);
+    }
 }
