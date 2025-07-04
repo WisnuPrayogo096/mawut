@@ -54,13 +54,6 @@ class FpMasjidController extends Controller
             ->orderByDesc('waktu_finger')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        // if ($fpMasjid->isEmpty()) {
-        //     throw new ResponseException(
-        //         'Data finger masjid tidak ditemukan untuk bulan dan tahun yang dipilih.',
-        //         404
-        //     );
-        // }
-
         $groupedItems = [];
         foreach ($fpMasjid->items() as $item) {
             $dateKey = Carbon::parse($item->waktu_finger, 'Asia/Jakarta')->format('Y-m-d');

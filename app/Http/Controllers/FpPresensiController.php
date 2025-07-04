@@ -6,11 +6,9 @@ use App\Http\Exceptions\ResponseException;
 use App\Http\Resources\BaseResponse;
 use App\Models\FpPresensi;
 use Illuminate\Http\Request;
-use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Validator;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class FpPresensiController extends Controller
 {
@@ -54,13 +52,6 @@ class FpPresensiController extends Controller
             ->where('hapus', 0)
             ->orderByDesc('tanggal_absen')
             ->paginate($perPage, ['*'], 'page', $page);
-
-        // if ($fpPresensi->isEmpty()) {
-        //     throw new ResponseException(
-        //         'Data finger pegawai tidak ditemukan untuk bulan dan tahun yang dipilih.',
-        //         404
-        //     );
-        // }
 
         $groupedItems = [];
         foreach ($fpPresensi->items() as $item) {
@@ -182,14 +173,13 @@ class FpPresensiController extends Controller
             4 => 31,
         ];
 
-        // Return the mapped minute or a default value (e.g., 1) if not found
-        return $mapMenit[$idMesin] ?? 1;
+        return $mapMenit[$idMesin] ?? 2;
     }
 
     private function generateTimeDb(Carbon $waktuSekarang, int $idMesin): Carbon
     {
         $menitMesin = $this->getMenitMesin($idMesin);
-        $detikMesin = 1; // Detik selalu 01
+        $detikMesin = 1; // only 01
 
         $jam = $waktuSekarang->hour;
         $menit = $waktuSekarang->minute;
