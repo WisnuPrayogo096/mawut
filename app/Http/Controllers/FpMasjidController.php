@@ -54,12 +54,12 @@ class FpMasjidController extends Controller
             ->orderByDesc('waktu_finger')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        if ($fpMasjid->isEmpty()) {
-            throw new ResponseException(
-                'Data finger masjid tidak ditemukan untuk bulan dan tahun yang dipilih.',
-                404
-            );
-        }
+        // if ($fpMasjid->isEmpty()) {
+        //     throw new ResponseException(
+        //         'Data finger masjid tidak ditemukan untuk bulan dan tahun yang dipilih.',
+        //         404
+        //     );
+        // }
 
         $groupedItems = [];
         foreach ($fpMasjid->items() as $item) {
@@ -96,6 +96,29 @@ class FpMasjidController extends Controller
         return new BaseResponse($responseData, 200);
     }
 
+    public function getTodayFpMasjid()
+    {
+        $user = Auth::user();
+
+        if (!$user || empty($user->idf)) {
+            throw new ResponseException(
+                'ID finger user tidak ditemukan atau kosong. Akses ditolak.',
+                403
+            );
+        }
+
+        $today = Carbon::now('Asia/Jakarta');
+        $idf = $user->idf;
+
+        $fpMasjidToday = FpMasjid::where('id_finger', $idf)
+            ->whereDate('waktu_finger', $today)
+            ->where('hapus', 0)
+            ->orderByDesc('waktu_finger')
+            ->get();
+
+        return new BaseResponse($fpMasjidToday->toArray(), 200);
+    }
+
     public function jadwalSholat()
     {
         $apiSholat = 'https://muslimsalat.com/malang.json?key=bc2f2bba711f74e1e342eb7cfba0d459';
@@ -107,6 +130,8 @@ class FpMasjidController extends Controller
                 return response()->json(['error' => 'Gagal mengambil data jadwal sholat dari API.'], 502);
             }
 
+            $user = Auth::user();
+            $idf = $user ? $user->idf : null;
             $data = $response->json();
             $jadwalHariIni = $data['items'][0];
         } catch (\Exception $e) {
@@ -118,6 +143,7 @@ class FpMasjidController extends Controller
             'date' => $dateNow,
             'message' => 'Tidak ada waktu sholat saat ini',
             'active' => false,
+            'status' => false,
         ];
 
         $waktuSholatPenting = [
@@ -129,20 +155,28 @@ class FpMasjidController extends Controller
         ];
 
         $sekarang = Carbon::now('Asia/Jakarta');
+        // $sekarang = Carbon::parse('2025-07-04 19:00:00', 'Asia/Jakarta');
 
         foreach ($waktuSholatPenting as $prayer => $waktu) {
-            $waktuMulai = Carbon::createFromFormat('g:i a', $waktu, 'Asia/Jakarta');
-
-            // tambahkan range 50 menit
+            $waktuMulai = Carbon::createFromFormat('g:i a', $waktu, 'Asia/Jakarta')->setDateFrom(Carbon::parse($dateNow, 'Asia/Jakarta'));
             $waktuSelesai = $waktuMulai->copy()->addMinutes(50);
 
             if ($sekarang->between($waktuMulai, $waktuSelesai, true)) {
+                $statusPegawai = false;
+                if ($idf) {
+                    $absen = FpMasjid::where('id_finger', $idf)
+                        ->where('hapus', 0)
+                        ->whereBetween('waktu_finger', [$waktuMulai, $waktuSelesai])
+                        ->exists();
+                    $statusPegawai = $absen ? true : false;
+                }
                 $responseData = [
                     'date' => $dateNow,
                     'prayer' => $prayer,
                     'start_time' => $waktuMulai->format('H:i'),
                     'end_time' => $waktuSelesai->format('H:i'),
                     'active' => true,
+                    'status' => $statusPegawai,
                 ];
                 break;
             }

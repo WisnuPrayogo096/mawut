@@ -39,7 +39,7 @@ class FpPresensiController extends Controller
         $tahun = $tahunQuery !== null ? (int)$tahunQuery : Carbon::now()->year;
         $page = $pageQuery !== null ? (int)$pageQuery : 1;
         $perPage = 10;
-        $idf = $user->idf;
+        $idf = $user ? $user->idf : null;
 
         if (!$user || empty($idf)) {
             throw new ResponseException(
@@ -55,12 +55,12 @@ class FpPresensiController extends Controller
             ->orderByDesc('tanggal_absen')
             ->paginate($perPage, ['*'], 'page', $page);
 
-        if ($fpPresensi->isEmpty()) {
-            throw new ResponseException(
-                'Data finger pegawai tidak ditemukan untuk bulan dan tahun yang dipilih.',
-                404
-            );
-        }
+        // if ($fpPresensi->isEmpty()) {
+        //     throw new ResponseException(
+        //         'Data finger pegawai tidak ditemukan untuk bulan dan tahun yang dipilih.',
+        //         404
+        //     );
+        // }
 
         $groupedItems = [];
         foreach ($fpPresensi->items() as $item) {
@@ -95,5 +95,31 @@ class FpPresensiController extends Controller
         ];
 
         return new BaseResponse($responseData, 200);
+    }
+
+    public function getTodayFpPresensi()
+    {
+        $user = Auth::user();
+
+        if (!$user || empty($user->idf)) {
+            throw new ResponseException(
+                'ID finger user tidak ditemukan atau kosong. Akses ditolak.',
+                403
+            );
+        }
+
+        $today = Carbon::now('Asia/Jakarta');
+        $idf = $user->idf;
+
+        $fpPresensi = FpPresensi::where('id_finger', $idf)
+            ->whereDate('tanggal_absen', $today)
+            ->where('hapus', 0)
+            ->get();
+
+        $grouped = $fpPresensi->groupBy('status')->map(function ($items) {
+            return $items->first();
+        });
+
+        return new BaseResponse($grouped->values()->toArray(), 200);
     }
 }

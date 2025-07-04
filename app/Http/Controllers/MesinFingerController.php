@@ -34,9 +34,9 @@ class MesinFingerController extends Controller
             ['status', 1],
         ])->get();
 
-        if ($masterFpMasjid->isEmpty()) {
-            throw new ResponseException('Data mesin finger masjid tidak ditemukan atau kosong.', 404);
-        }
+        // if ($masterFpMasjid->isEmpty()) {
+        //     throw new ResponseException('Data mesin finger masjid tidak ditemukan atau kosong.', 404);
+        // }
 
         $masterFpMasjid = $masterFpMasjid->map(function ($item) {
             return [
@@ -54,9 +54,9 @@ class MesinFingerController extends Controller
     {
         $masterFpPresensi = MasterFpPresensi::where('hapus', 0)->get();
 
-        if ($masterFpPresensi->isEmpty()) {
-            throw new ResponseException('Data mesin finger presensi tidak ditemukan atau kosong.', 404);
-        }
+        // if ($masterFpPresensi->isEmpty()) {
+        //     throw new ResponseException('Data mesin finger presensi tidak ditemukan atau kosong.', 404);
+        // }
 
         $masterFpPresensi = $masterFpPresensi->map(function ($item) {
             return [
