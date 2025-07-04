@@ -24,5 +24,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // method post
     Route::post('/fp-masjid/create', [FpMasjidController::class, 'store']);
+    Route::post('/fp-presensi/create', [FpPresensiController::class, 'store']);
     Route::post('/logout', [AuthController::class, 'logout']);
 });

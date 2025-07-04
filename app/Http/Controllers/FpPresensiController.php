@@ -130,10 +130,13 @@ class FpPresensiController extends Controller
         $validator = Validator::make($request->all(), [
             'id_fp_finger_mesin' => 'required|integer|exists:fp_finger_mesin,id',
             // 'id_fp_finger_mesin' => 'required|integer|exists:mysql_bosq.fp_finger_mesin,id',
+            'status' => 'required|in:0,1',
         ], [
             'id_fp_finger_mesin.required' => 'ID mesin finger wajib diisi.',
             'id_fp_finger_mesin.integer' => 'ID mesin finger harus berupa angka.',
             'id_fp_finger_mesin.exists' => 'ID mesin finger tidak ditemukan.',
+            'status.required' => 'Status wajib diisi.',
+            'status.in' => 'Status harus berupa 0 atau 1.',
         ]);
 
         if ($validator->fails()) {
@@ -144,20 +147,22 @@ class FpPresensiController extends Controller
             throw new ResponseException('ID Finger tidak ditemukan.', 404);
         }
 
+        $idMesin = $request->input('id_fp_finger_mesin');
+        $menitMesin = $this->getMenitMesin($idMesin);
         $waktuFinger = Carbon::now('Asia/Jakarta');
 
-        // jika waktu request tepat pada menit ke-2 dan detik ke-1, buak.
-        if ($waktuFinger->minute == 2 && $waktuFinger->second == 1) {
+        // jika waktu request tepat pada menit dan detik yang ditentukan untuk mesin tersebut
+        if ($waktuFinger->minute == $menitMesin && $waktuFinger->second == 1) {
             throw new ResponseException('Silahkan coba lagi di menit selanjutnya.', 409);
         }
 
-        $tglGenerate = $this->generateTimeDb($waktuFinger);
+        $tglGenerate = $this->generateTimeDb($waktuFinger, $idMesin);
 
         $data = [
-            'id_fp_finger_mesin' => $request->input('id_fp_finger_mesin'),
+            'id_fp_finger_mesin' => $idMesin,
             'id_finger' => $user->idf,
-            'waktu_finger' => $waktuFinger,
-            'status' => 0,
+            'tanggal_absen' => $waktuFinger,
+            'status' => $request->input('status'),
             'hapus' => 0,
             'tgl_insert' => $tglGenerate,
             'tgl_update' => $tglGenerate,
@@ -168,24 +173,40 @@ class FpPresensiController extends Controller
         return new BaseResponse($fpPresensi->toArray(), 201);
     }
 
-    private function generateTimeDb(Carbon $waktuSekarang): Carbon
+    private function getMenitMesin(int $idMesin): int
     {
+        $mapMenit = [
+            1 => 1,
+            2 => 11,
+            3 => 21,
+            4 => 31,
+        ];
+
+        // Return the mapped minute or a default value (e.g., 1) if not found
+        return $mapMenit[$idMesin] ?? 1;
+    }
+
+    private function generateTimeDb(Carbon $waktuSekarang, int $idMesin): Carbon
+    {
+        $menitMesin = $this->getMenitMesin($idMesin);
+        $detikMesin = 1; // Detik selalu 01
+
         $jam = $waktuSekarang->hour;
         $menit = $waktuSekarang->minute;
         $detik = $waktuSekarang->second;
 
-        // jika waktu sudah melewati menit ke-2, detik ke-1 pada jam saat ini
-        if ($menit > 2 || ($menit == 2 && $detik > 1)) {
+        // jika waktu sudah melewati menit dan detik yang ditentukan pada jam saat ini
+        if ($menit > $menitMesin || ($menit == $menitMesin && $detik > $detikMesin)) {
             $jam++;
         }
 
         // jika jam melewati tengah malam (overflow)
         if ($jam >= 24) {
-            // set ke hari berikutnya, jam 00:02:01
-            return $waktuSekarang->copy()->addDay()->startOfDay()->setTime(0, 2, 1);
+            // set ke hari berikutnya, pada jam 00 dan menit & detik yang sesuai
+            return $waktuSekarang->copy()->addDay()->startOfDay()->setTime(0, $menitMesin, $detikMesin);
         }
 
-        // set ke jam yang sudah dihitung, pada menit ke-2 dan detik ke-1
-        return $waktuSekarang->copy()->setTime($jam, 2, 1);
+        // set ke jam yang sudah dihitung, pada menit dan detik yang sesuai
+        return $waktuSekarang->copy()->setTime($jam, $menitMesin, $detikMesin);
     }
 }
