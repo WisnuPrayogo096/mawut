@@ -9,7 +9,7 @@ use App\Models\FpMasjid;
 class MasterFpMasjid extends Model
 {
     use HasFactory;
-    // protected $connection = "mysql_bosq";
+    protected $connection = "mysql_bosq";
     protected $table = 'binroh_mesin_finger';
     protected $primaryKey = 'id';
     protected $fillable = [

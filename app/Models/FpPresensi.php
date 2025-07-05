@@ -9,7 +9,7 @@ use App\Models\MasterFpPresensi;
 class FpPresensi extends Model
 {
     use HasFactory;
-    // protected $connection = "mysql_bosq";
+    protected $connection = "mysql_bosq";
     public $timestamps = false;
     protected $table = 'fp_finger_pegawai';
     protected $primaryKey = 'id';
