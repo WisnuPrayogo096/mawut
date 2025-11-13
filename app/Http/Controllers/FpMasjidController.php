@@ -91,56 +91,90 @@ class FpMasjidController extends Controller
 
     public function responseApiV1()
     {
-        $apiSholatV1 = 'https://muslimsalat.com/malang.json?key=bc2f2bba711f74e1e342eb7cfba0d459';
-        try {
-            $response = Http::get($apiSholatV1);
+        $apiUrl = 'https://muslimsalat.com/malang.json?key=bc2f2bba711f74e1e342eb7cfba0d459';
 
-            if ($response->failed() || !isset($response->json()['items'][0])) {
-                return response()->json(['error' => 'Gagal mengambil data jadwal sholat dari API.'], 502);
+        try {
+            $response = Http::get($apiUrl);
+
+            if ($response->failed() || !data_get($response->json(), 'items.0')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengambil data jadwal sholat dari API.',
+                    'data'    => null
+                ], 502);
             }
 
-            $data = $response->json();
-            $jadwalHariIni = $data['items'][0];
+            $item = data_get($response->json(), 'items.0');
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Tidak dapat terhubung ke server jadwal sholat.'], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat terhubung ke server jadwal sholat.',
+                'error'   => $e->getMessage(),
+                'data'    => null
+            ], 500);
         }
 
-        $waktuSholatPenting = [
-            'Subuh'   => $jadwalHariIni['fajr'],
-            'Dzuhur'  => $jadwalHariIni['dhuhr'],
-            'Ashar'   => $jadwalHariIni['asr'],
-            'Maghrib' => $jadwalHariIni['maghrib'],
-            'Isya'    => $jadwalHariIni['isha'],
+        $jadwalSholat = [
+            'subuh'    => $item['fajr'],
+            'dzuhur'   => $item['dhuhr'],
+            'ashar'    => $item['asr'],
+            'maghrib'  => $item['maghrib'],
+            'isya'     => $item['isha'],
         ];
 
-        return response()->json($waktuSholatPenting, 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mengambil jadwal sholat.',
+            'kota'    => data_get($response->json(), 'query', 'Malang'),
+            'tanggal' => data_get($item, 'date_for'),
+            'sumber'  => 'MuslimSalat API',
+            'data'    => $jadwalSholat
+        ], 200);
     }
 
     public function responseApiV2()
     {
-        $apiSholatV2 = 'https://api.aladhan.com/v1/timingsByCity/13-11-2025?city=malang&country=Indonesia&method=2';
-        try {
-            $response = Http::get($apiSholatV2);
+        $dateNow = Carbon::now('Asia/Jakarta')->format('d-m-Y');
+        $apiUrl = "https://api.aladhan.com/v1/timingsByCity/{$dateNow}?city=Malang&country=Indonesia&method=1";
 
-            if ($response->failed() || !isset($response->json()['data']['timings'])) {
-                return response()->json(['error' => 'Gagal mengambil data jadwal sholat dari API.'], 502);
+        try {
+            $response = Http::get($apiUrl);
+
+            if ($response->failed() || !data_get($response->json(), 'data.timings')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal mengambil data jadwal sholat dari API.',
+                    'data'    => null
+                ], 502);
             }
 
-            $data = $response->json();
-            $jadwalHariIni = $data['data']['timings'];
+            $timings = data_get($response->json(), 'data.timings');
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Tidak dapat terhubung ke server jadwal sholat.'], 500);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak dapat terhubung ke server jadwal sholat.',
+                'error'   => $e->getMessage(),
+                'data'    => null
+            ], 500);
         }
 
-        $waktuSholatPenting = [
-            'Subuh'   => $jadwalHariIni['Fajr'],
-            'Dzuhur'  => $jadwalHariIni['Dhuhr'],
-            'Ashar'   => $jadwalHariIni['Asr'],
-            'Maghrib' => $jadwalHariIni['Maghrib'],
-            'Isya'    => $jadwalHariIni['Isha'],
+        $jadwalSholat = [
+            'subuh'    => $timings['Fajr'],
+            'dzuhur'   => $timings['Dhuhr'],
+            'ashar'    => $timings['Asr'],
+            'maghrib'  => $timings['Maghrib'],
+            'isya'     => $timings['Isha'],
         ];
 
-        return response()->json($waktuSholatPenting, 200);
+        return response()->json([
+            'success' => true,
+            'message' => 'Berhasil mengambil jadwal sholat.',
+            'tanggal' => $dateNow,
+            'kota'    => 'Malang',
+            'metode'  => 'Kemenag (Method 1)',
+            'data'    => $jadwalSholat
+        ], 200);
     }
 
     public function jadwalSholat()
