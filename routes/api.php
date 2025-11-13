@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Route;
 // })->middleware('auth:sanctum');
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/api-sholat-v1', [FpMasjidController::class, 'responseApiV1']);
+Route::get('/api-sholat-v2', [FpMasjidController::class, 'responseApiV2']);
 
 Route::middleware('auth:sanctum')->group(function () {
     // method get

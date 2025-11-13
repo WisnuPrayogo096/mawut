@@ -89,6 +89,60 @@ class FpMasjidController extends Controller
         return new BaseResponse($responseData, 200);
     }
 
+    public function responseApiV1()
+    {
+        $apiSholatV1 = 'https://muslimsalat.com/malang.json?key=bc2f2bba711f74e1e342eb7cfba0d459';
+        try {
+            $response = Http::get($apiSholatV1);
+
+            if ($response->failed() || !isset($response->json()['items'][0])) {
+                return response()->json(['error' => 'Gagal mengambil data jadwal sholat dari API.'], 502);
+            }
+
+            $data = $response->json();
+            $jadwalHariIni = $data['items'][0];
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Tidak dapat terhubung ke server jadwal sholat.'], 500);
+        }
+
+        $waktuSholatPenting = [
+            'Subuh'   => $jadwalHariIni['fajr'],
+            'Dzuhur'  => $jadwalHariIni['dhuhr'],
+            'Ashar'   => $jadwalHariIni['asr'],
+            'Maghrib' => $jadwalHariIni['maghrib'],
+            'Isya'    => $jadwalHariIni['isha'],
+        ];
+
+        return response()->json($waktuSholatPenting, 200);
+    }
+
+    public function responseApiV2()
+    {
+        $apiSholatV2 = 'https://api.aladhan.com/v1/timingsByCity/13-11-2025?city=malang&country=Indonesia&method=2';
+        try {
+            $response = Http::get($apiSholatV2);
+
+            if ($response->failed() || !isset($response->json()['data']['timings'])) {
+                return response()->json(['error' => 'Gagal mengambil data jadwal sholat dari API.'], 502);
+            }
+
+            $data = $response->json();
+            $jadwalHariIni = $data['data']['timings'];
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Tidak dapat terhubung ke server jadwal sholat.'], 500);
+        }
+
+        $waktuSholatPenting = [
+            'Subuh'   => $jadwalHariIni['Fajr'],
+            'Dzuhur'  => $jadwalHariIni['Dhuhr'],
+            'Ashar'   => $jadwalHariIni['Asr'],
+            'Maghrib' => $jadwalHariIni['Maghrib'],
+            'Isya'    => $jadwalHariIni['Isha'],
+        ];
+
+        return response()->json($waktuSholatPenting, 200);
+    }
+
     public function jadwalSholat()
     {
         $apiSholat = 'https://muslimsalat.com/malang.json?key=bc2f2bba711f74e1e342eb7cfba0d459';
