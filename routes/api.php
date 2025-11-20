@@ -20,7 +20,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/fp-absensi', [FpPresensiController::class, 'index']);
     Route::get('/today-presensi', [FpPresensiController::class, 'getTodayFpPresensi']);
     Route::get('/fp-masjid', [FpMasjidController::class, 'index']);
-    Route::get('/jadwal-sholat', [FpMasjidController::class, 'jadwalSholat']);
+    Route::get('/jadwal-sholat', [FpMasjidController::class, 'jadwalSholatV2']);
     Route::get('/mesin-masjid', [MesinFingerController::class, 'indexMasjid']);
     Route::get('/mesin-presensi', [MesinFingerController::class, 'indexPresensi']);
 

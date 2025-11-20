@@ -177,31 +177,47 @@ class FpMasjidController extends Controller
         ], 200);
     }
 
-    public function jadwalSholat()
+    public function jadwalSholatV1()
     {
         $apiSholat = 'https://muslimsalat.com/malang.json?key=bc2f2bba711f74e1e342eb7cfba0d459';
 
         try {
             $response = Http::get($apiSholat);
 
-            if ($response->failed() || !isset($response->json()['items'][0])) {
-                return response()->json(['error' => 'Gagal mengambil data jadwal sholat dari API.'], 502);
+            if ($response->failed()) {
+                return new BaseResponse([
+                    'error' => 'Gagal mengambil data jadwal sholat dari API.',
+                ], 502);
+            }
+
+            $jadwalHariIni = $response->json('items.0');
+
+            if (!$jadwalHariIni) {
+                return new BaseResponse([
+                    'error' => 'Data jadwal sholat tidak ditemukan.',
+                ], 502);
             }
 
             $user = Auth::user();
             $idf = $user ? $user->idf : null;
-            $data = $response->json();
-            $jadwalHariIni = $data['items'][0];
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Tidak dapat terhubung ke server jadwal sholat.'], 500);
+        } catch (\Throwable $e) {
+            // Log::error('Jadwal sholat error: '.$e->getMessage());
+
+            return new BaseResponse([
+                'error' => 'Tidak dapat terhubung ke server jadwal sholat.',
+            ], 500);
         }
 
-        $dateNow = Carbon::parse($jadwalHariIni['date_for'], 'Asia/Jakarta')->format('Y-m-d');
+        $dateNow = Carbon::parse($jadwalHariIni['date_for'], 'Asia/Jakarta')->toDateString();
+
         $responseData = [
             'date' => $dateNow,
-            'message' => 'Tidak ada waktu sholat saat ini',
+            'prayer' => null,
+            'start_time' => null,
+            'end_time' => null,
             'active' => false,
             'status' => false,
+            'message' => 'Tidak ada waktu sholat saat ini',
         ];
 
         $waktuSholatPenting = [
@@ -213,29 +229,130 @@ class FpMasjidController extends Controller
         ];
 
         $sekarang = Carbon::now('Asia/Jakarta');
-        // $sekarang = Carbon::parse('2025-07-04 19:00:00', 'Asia/Jakarta');
+        // $sekarang = Carbon::parse('2025-11-20 19:00:00', 'Asia/Jakarta');
 
         foreach ($waktuSholatPenting as $prayer => $waktu) {
-            $waktuMulai = Carbon::createFromFormat('g:i a', $waktu, 'Asia/Jakarta')->setDateFrom(Carbon::parse($dateNow, 'Asia/Jakarta'));
+            $waktuMulai = Carbon::parse($dateNow . ' ' . $waktu, 'Asia/Jakarta');
             $waktuSelesai = $waktuMulai->copy()->addMinutes(50);
 
             if ($sekarang->between($waktuMulai, $waktuSelesai, true)) {
                 $statusPegawai = false;
+
                 if ($idf) {
-                    $absen = FpMasjid::where('id_finger', $idf)
+                    $statusPegawai = FpMasjid::where('id_finger', $idf)
                         ->where('hapus', 0)
                         ->whereBetween('waktu_finger', [$waktuMulai, $waktuSelesai])
                         ->exists();
-                    $statusPegawai = $absen ? true : false;
                 }
+
                 $responseData = [
-                    'date' => $dateNow,
-                    'prayer' => $prayer,
+                    'date'       => $dateNow,
+                    'prayer'     => $prayer,
                     'start_time' => $waktuMulai->format('H:i'),
-                    'end_time' => $waktuSelesai->format('H:i'),
-                    'active' => true,
-                    'status' => $statusPegawai,
+                    'end_time'   => $waktuSelesai->format('H:i'),
+                    'active'     => true,
+                    'status'     => $statusPegawai,
+                    'message'    => "Sedang waktu sholat $prayer",
                 ];
+                break;
+            }
+        }
+
+        return new BaseResponse($responseData, 200);
+    }
+
+    public function jadwalSholatV2()
+    {
+        $dateNowApi = Carbon::now('Asia/Jakarta')->format('d-m-Y');
+        $apiUrl = "https://api.aladhan.com/v1/timingsByCity/{$dateNowApi}?city=Malang&country=Indonesia&method=1";
+
+        try {
+            $response = Http::get($apiUrl);
+
+            if ($response->failed()) {
+                return new BaseResponse([
+                    'error' => 'Gagal mengambil data jadwal sholat dari API.',
+                ], 502);
+            }
+
+            $data = $response->json('data');
+
+            if (!$data || !isset($data['timings'])) {
+                return new BaseResponse([
+                    'error' => 'Data jadwal sholat tidak ditemukan.',
+                ], 502);
+            }
+
+            $timings = $data['timings'];
+
+            $gregorianDate = $data['date']['gregorian']['date'] ?? null;
+
+            if ($gregorianDate) {
+                $dateNow = Carbon::createFromFormat('d-m-Y', $gregorianDate, 'Asia/Jakarta')
+                    ->toDateString();
+            } else {
+                $dateNow = Carbon::now('Asia/Jakarta')->toDateString();
+            }
+
+            $user = Auth::user();
+            $idf = $user ? $user->idf : null;
+        } catch (\Throwable $e) {
+            // Log::error('Jadwal sholat error: '.$e->getMessage());
+            return new BaseResponse([
+                'error' => 'Tidak dapat terhubung ke server jadwal sholat.',
+            ], 500);
+        }
+
+        $responseData = [
+            'date'       => $dateNow,
+            'prayer'     => null,
+            'start_time' => null,
+            'end_time'   => null,
+            'active'     => false,
+            'status'     => false,
+            'message'    => 'Tidak ada waktu sholat saat ini',
+        ];
+
+        $waktuSholatPenting = [
+            'Subuh'   => $timings['Fajr']    ?? null,
+            'Dzuhur'  => $timings['Dhuhr']   ?? null,
+            'Ashar'   => $timings['Asr']     ?? null,
+            'Maghrib' => $timings['Maghrib'] ?? null,
+            'Isya'    => $timings['Isha']    ?? null,
+        ];
+
+        $sekarang = Carbon::now('Asia/Jakarta');
+        // $sekarang = Carbon::parse('2025-11-20 17:35:00', 'Asia/Jakarta'); // untuk testing
+
+        foreach ($waktuSholatPenting as $prayer => $waktu) {
+            if (!$waktu) {
+                continue;
+            }
+
+            $waktuSholat = Carbon::parse($dateNow . ' ' . $waktu, 'Asia/Jakarta');
+            $waktuMulai = $waktuSholat->copy()->addMinutes(10);
+            $waktuSelesai = $waktuMulai->copy()->addMinutes(50);
+
+            if ($sekarang->between($waktuMulai, $waktuSelesai, true)) {
+                $statusPegawai = false;
+
+                if ($idf) {
+                    $statusPegawai = FpMasjid::where('id_finger', $idf)
+                        ->where('hapus', 0)
+                        ->whereBetween('waktu_finger', [$waktuMulai, $waktuSelesai])
+                        ->exists();
+                }
+
+                $responseData = [
+                    'date'       => $dateNow,
+                    'prayer'     => $prayer,
+                    'start_time' => $waktuMulai->format('H:i'),
+                    'end_time'   => $waktuSelesai->format('H:i'),
+                    'active'     => true,
+                    'status'     => $statusPegawai,
+                    'message'    => "Sedang waktu sholat $prayer",
+                ];
+
                 break;
             }
         }
